@@ -6,6 +6,8 @@ Optionally it can compress the data before encrypting them.
 I use it for symmetric-key encryption schemes. Depending on your usage it may or may not be a safe option.
 I do not claim any expertise in cryptography.
 
+Note: The compression status is set inside the message (last bit of the nonce), thus whilst you do need to have a common key and padding between two processes exchanging messages, you do not need to have a common compression setting.
+
 ## Usage
 
     import "github.com/andmarios/cryptographer"

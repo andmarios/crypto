@@ -23,6 +23,8 @@ const (
 	nonceSize = 24
 )
 
+const compressBit byte = 0x01
+
 // A Cryptographer holds the instance's key and the compression settings.
 type Cryptographer struct {
 	key      *[keySize]byte
@@ -54,8 +56,9 @@ func (c Cryptographer) Encrypt(msg []byte) (out []byte, e error) {
 		return nil, err
 	}
 
-	out = make([]byte, nonceSize)
-	copy(out, nonce[:])
+	// We use the last bit of the nonce as a compression indicator.
+	// This should still keep you safe (extremely rare collisions).
+	nonce[23] &= ^compressBit
 
 	if c.compress {
 		var b bytes.Buffer
@@ -63,14 +66,19 @@ func (c Cryptographer) Encrypt(msg []byte) (out []byte, e error) {
 		w.Write(msg)
 		w.Close()
 		msg = b.Bytes()
+		nonce[23] |= compressBit
 	}
+
+	out = make([]byte, nonceSize)
+	copy(out, nonce[:])
 
 	out = secretbox.Seal(out, msg, nonce, c.key)
 	return out, nil
 }
 
 // Decrypt decrypts an encrypted message and returns it (plaintext).
-// If you have enabled compression, it wil decompress the msg after decrypting it.
+// If you have enabled compression, it wil detect it and decompress
+// the msg after decrypting it.
 func (c Cryptographer) Decrypt(msg []byte) ([]byte, error) {
 	if len(msg) < nonceSize+secretbox.Overhead {
 		return nil, errors.New("encrypted message length too short")
@@ -84,7 +92,7 @@ func (c Cryptographer) Decrypt(msg []byte) ([]byte, error) {
 		return nil, errors.New("could not decrypt message")
 	}
 
-	if c.compress {
+	if nonce[23]&compressBit == compressBit {
 		b := new(bytes.Buffer)
 		r, err := zlib.NewReader(bytes.NewReader(out))
 		if err != nil {

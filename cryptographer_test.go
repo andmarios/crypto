@@ -46,6 +46,11 @@ func TestPackage(t *testing.T) {
 	if bytes.Compare(decc, msg) != 0 {
 		t.Errorf("Decoded compressed message '%v' differs from compressed encoded message '%v'.", dec, msg)
 	}
+
+	decc, err = c.Decrypt(encc)
+	if bytes.Compare(decc, msg) != 0 {
+		t.Errorf("Decoded compressed message '%v' differs from compressed encoded message '%v' when using a compressing and a non-compressing cryptographer instance.", dec, msg)
+	}
 }
 
 func BenchmarkEncryptUncompessed1K(b *testing.B) {
