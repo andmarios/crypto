@@ -120,10 +120,10 @@ func (c Cryptographer) Decrypt(msg []byte) ([]byte, error) {
 // A Reader may be re-used by using Reset.
 type Reader struct {
 	r         io.Reader
-	key       *[keySize]byte
 	msg       []byte
 	done      bool
 	firstRead bool
+	c         *Cryptographer
 }
 
 func newInternal(naclKey *[32]byte, compress bool) *Cryptographer {
@@ -139,7 +139,7 @@ func NewReader(r io.Reader, key, pad string) (*Reader, error) {
 	if err != nil {
 		return nil, err
 	}
-	return &Reader{r, naclKey, nil, false, true}, nil
+	return &Reader{r, nil, false, true, newInternal(naclKey, false)}, nil
 }
 
 // Read reads into p an unecrypted and, if needed, uncompressed form
@@ -154,21 +154,30 @@ func (r *Reader) Read(p []byte) (n int, err error) {
 	if err != nil {
 		return 0, err
 	}
-	r.done = true
 
 	if r.firstRead {
-		c := newInternal(r.key, false)
-		r.msg, err = c.Decrypt(msg)
+		r.msg, err = r.c.Decrypt(msg)
 		if err != nil {
 			r.done = true
 			return 0, errors.New("could not decrypt input: " + err.Error())
 		}
 		r.firstRead = false
 	}
-	for i, b := range r.msg {
-		p[i] = b
+
+	length := len(r.msg)
+	if len(p) < length {
+		length = len(p)
 	}
-	return len(r.msg), nil
+	for i := 0; i < length; i++ {
+		p[i] = r.msg[i]
+	}
+	if length < len(r.msg) {
+		r.msg = r.msg[len(p):]
+	} else {
+		r.msg = r.msg[:0]
+		r.done = true
+	}
+	return length, nil
 }
 
 // Reset returns Reader to its initial state, except it now reads from r.
@@ -183,9 +192,8 @@ func (d *Reader) Reset(r io.Reader) {
 // compressed form of that data to an underlying writer.
 type Writer struct {
 	w           io.Writer
-	key         *[keySize]byte
 	unencrypted []byte
-	compress    bool
+	c           *Cryptographer
 }
 
 // NewWriter creates a new writer. Writes to the returned Writer are encrypted and,
@@ -198,7 +206,7 @@ func NewWriter(w io.Writer, key, pad string, compress bool) (*Writer, error) {
 	if err != nil {
 		return nil, err
 	}
-	return &Writer{w, naclKey, nil, compress}, nil
+	return &Writer{w, nil, newInternal(naclKey, compress)}, nil
 }
 
 // Write writes and encrypted and, if needed, compressed form of p to the underlying
@@ -212,9 +220,8 @@ func (w *Writer) Write(p []byte) (n int, err error) {
 // Flush encrypts and compresses, if needed, the data written to the writer.
 // After a Flush, the writer has to be Reset in order to write to it again.
 func (w *Writer) Flush() error {
-	c := newInternal(w.key, w.compress)
 	var err error
-	write, err := c.Encrypt(w.unencrypted)
+	write, err := w.c.Encrypt(w.unencrypted)
 	if err != nil {
 		return err
 	}

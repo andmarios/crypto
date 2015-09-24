@@ -94,6 +94,40 @@ func TestPackage(t *testing.T) {
 	if bytes.Compare(dencrr, msg) != 0 {
 		t.Errorf("Reset() Writer failed. Decoded message '%v' differs from encoded message '%v'.", dencrr, msg)
 	}
+
+	bigMsg := make([]byte, 1024*1024) // 1MiB
+	_, _ = io.ReadFull(rand.Reader, bigMsg)
+
+	bigEnc, err := c.Encrypt(bigMsg)
+	if err != nil {
+		t.Errorf(err.Error())
+	}
+	bigDec, err := c.Decrypt(bigEnc)
+	if err != nil {
+		t.Errorf(err.Error())
+	}
+	if bytes.Compare(bigDec, bigMsg) != 0 {
+		t.Errorf("Decoded big message (len: %d bytes) differs from encoded big message (len: %d bytes).", len(bigDec), len(bigMsg))
+	}
+	r.Reset(bytes.NewReader(bigEnc))
+	bigDecr, err := ioutil.ReadAll(r)
+	if err != nil {
+		t.Errorf("Error while decoding with reset big Reader.", err)
+	}
+	if bytes.Compare(bigDecr, bigMsg) != 0 {
+		t.Errorf("Reset() Reader failed. Decoded message '%v' differs from encoded message '%v'.", decrr, msg)
+	}
+	encr.Reset()
+	w.Reset(&encr)
+	w.Write(bigMsg)
+	w.Close()
+	bigDencr, err := c.Decrypt(encr.Bytes())
+	if err != nil {
+		t.Errorf("Error while decrypting big Writer() output.", err)
+	}
+	if bytes.Compare(bigDencr, bigMsg) != 0 {
+		t.Errorf("Big Writer() failed. Decoded big message (len: %d bytes) differs from encoded big message (len: %d bytes).", len(bigDencr), len(bigMsg))
+	}
 }
 
 func BenchmarkEncryptUncompessed1K(b *testing.B) {
@@ -138,15 +172,35 @@ func BenchmarkDecryptCompessed1K(b *testing.B) {
 	}
 }
 
+func BenchmarkWriterUncompressed1K(b *testing.B) {
+	msg := make([]byte, 1024)
+	_, _ = io.ReadFull(rand.Reader, msg)
+
+	w, _ := NewWriter(nil, "qwerty", "qwertyuiopasdfghjklzxcvbnm123456", false)
+
+	for n := 0; n < b.N; n++ {
+		var enc bytes.Buffer
+		w.Reset(&enc)
+		w.Write(msg)
+		w.Flush()
+	}
+}
+
 func BenchmarkReaderUncompressed1K(b *testing.B) {
 	msg := make([]byte, 1024)
 	_, _ = io.ReadFull(rand.Reader, msg)
 
 	c, _ := New("qwerty", "qwertyuiopasdfghjklzxcvbnm123456", false)
-	msg, _ = c.Encrypt(msg)
+	enc, _ := c.Encrypt(msg)
+
+	r, _ := NewReader(nil, "qwerty", "qwertyuiopasdfghjklzxcvbnm123456")
+
+	buf := bytes.NewReader(enc)
+	readbuf := make([]byte, 1024)
 
 	for n := 0; n < b.N; n++ {
-		r, _ := NewReader(bytes.NewReader(msg), "qwerty", "qwertyuiopasdfghjklzxcvbnm123456")
-		_, _ = ioutil.ReadAll(r)
+		_, _ = buf.Seek(0, 0)
+		r.Reset(buf)
+		_, _ = r.Read(readbuf)
 	}
 }
