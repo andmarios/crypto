@@ -5,6 +5,13 @@
    It is meant to be used for symmetric-key encryption schemes.
    Optionally it can (de)compress the data before (dec)encryption.
 
+   Beyond the recommended methods (Encrypt, Decrypt) it also implements
+   the io.ReadWriter interface which is slower. You may run the benchmarks
+   from cryptographer_test.go to decide if it is acceptable.
+
+   One bit of the NaCl's nonce is used to indicate whether the message was
+   compressed before encrypting. Still the algorithm should remain safe
+   since nonce collisions are again extremely rare.
 */
 package cryptographer
 
