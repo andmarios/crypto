@@ -1,17 +1,17 @@
 /*
-   Package cryptographer implements a simple library for on-the-fly
-   NaCl secret key encryption and decryption.
+Package cryptographer implements a simple library for on-the-fly
+NaCl secret key encryption and decryption.
 
-   It is meant to be used for symmetric-key encryption schemes.
-   Optionally it can (de)compress the data before (dec)encryption.
+It is meant to be used for symmetric-key encryption schemes.
+Optionally it can (de)compress the data before (dec)encryption.
 
-   Beyond the recommended methods (Encrypt, Decrypt) it also implements
-   the io.ReadWriter interface which is slower. You may run the benchmarks
-   from cryptographer_test.go to decide if it is acceptable.
+Beyond the recommended methods (Encrypt, Decrypt) it also implements
+the io.ReadWriter interface which is slower. You may run the benchmarks
+from cryptographer_test.go to decide if it is acceptable.
 
-   One bit of the NaCl's nonce is used to indicate whether the message was
-   compressed before encrypting. Still the algorithm should remain safe
-   since nonce collisions are again extremely rare.
+One bit of the NaCl's nonce is used to indicate whether the message was
+compressed before encrypting. Still the algorithm should remain safe
+since nonce collisions are again extremely rare.
 */
 package cryptographer
 
@@ -152,37 +152,37 @@ func NewReader(r io.Reader, key, pad string) (*Reader, error) {
 // Read reads into p an unecrypted and, if needed, uncompressed form
 // of the bytes from the underlying Reader. Read needs to read all
 // data from the underlying Reader before it can decrypt them.
-func (r *Reader) Read(p []byte) (n int, err error) {
-	if r.done {
+func (d *Reader) Read(p []byte) (n int, err error) {
+	if d.done {
 		return 0, io.EOF
 	}
 
-	msg, err := ioutil.ReadAll(r.r)
+	msg, err := ioutil.ReadAll(d.r)
 	if err != nil {
 		return 0, err
 	}
 
-	if r.firstRead {
-		r.msg, err = r.c.Decrypt(msg)
+	if d.firstRead {
+		d.msg, err = d.c.Decrypt(msg)
 		if err != nil {
-			r.done = true
+			d.done = true
 			return 0, errors.New("could not decrypt input: " + err.Error())
 		}
-		r.firstRead = false
+		d.firstRead = false
 	}
 
-	length := len(r.msg)
+	length := len(d.msg)
 	if len(p) < length {
 		length = len(p)
 	}
 	for i := 0; i < length; i++ {
-		p[i] = r.msg[i]
+		p[i] = d.msg[i]
 	}
-	if length < len(r.msg) {
-		r.msg = r.msg[len(p):]
+	if length < len(d.msg) {
+		d.msg = d.msg[len(p):]
 	} else {
-		r.msg = r.msg[:0]
-		r.done = true
+		d.msg = d.msg[:0]
+		d.done = true
 	}
 	return length, nil
 }
@@ -219,20 +219,20 @@ func NewWriter(w io.Writer, key, pad string, compress bool) (*Writer, error) {
 // Write writes and encrypted and, if needed, compressed form of p to the underlying
 // io.Writer. The compressed bytes are not written until the Writer is closed or
 // explicitly flushed.
-func (w *Writer) Write(p []byte) (n int, err error) {
-	w.unencrypted = append(w.unencrypted, p...)
+func (e *Writer) Write(p []byte) (n int, err error) {
+	e.unencrypted = append(e.unencrypted, p...)
 	return len(p), nil
 }
 
 // Flush encrypts and compresses, if needed, the data written to the writer.
 // After a Flush, the writer has to be Reset in order to write to it again.
-func (w *Writer) Flush() error {
+func (e *Writer) Flush() error {
 	var err error
-	write, err := w.c.Encrypt(w.unencrypted)
+	write, err := e.c.Encrypt(e.unencrypted)
 	if err != nil {
 		return err
 	}
-	_, err = w.w.Write(write)
+	_, err = e.w.Write(write)
 	if err != nil {
 		return err
 	}
@@ -240,8 +240,8 @@ func (w *Writer) Flush() error {
 }
 
 // Close acts as a placeholder for Flush.
-func (w *Writer) Close() error {
-	return w.Flush()
+func (e *Writer) Close() error {
+	return e.Flush()
 }
 
 // Reset clears the sate of the Writer w such that it is equivalent to its
