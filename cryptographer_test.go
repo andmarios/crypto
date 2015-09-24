@@ -130,9 +130,9 @@ func TestPackage(t *testing.T) {
 	}
 }
 
-func BenchmarkEncryptUncompessed1K(b *testing.B) {
-	c, _ := New("qwerty", "qwertyuiopasdfghjklzxcvbnm123456", false)
-	msg := make([]byte, 1024)
+func benchmarkEncrypt(b *testing.B, compress bool, msgLength int) {
+	c, _ := New("qwerty", "qwertyuiopasdfghjklzxcvbnm123456", compress)
+	msg := make([]byte, msgLength)
 	_, _ = io.ReadFull(rand.Reader, msg)
 
 	for n := 0; n < b.N; n++ {
@@ -140,19 +140,9 @@ func BenchmarkEncryptUncompessed1K(b *testing.B) {
 	}
 }
 
-func BenchmarkEncryptCompessed1K(b *testing.B) {
-	c, _ := New("qwerty", "qwertyuiopasdfghjklzxcvbnm123456", true)
-	msg := make([]byte, 1024)
-	_, _ = io.ReadFull(rand.Reader, msg)
-
-	for n := 0; n < b.N; n++ {
-		_, _ = c.Encrypt(msg)
-	}
-}
-
-func BenchmarkDecryptUncompessed1K(b *testing.B) {
-	c, _ := New("qwerty", "qwertyuiopasdfghjklzxcvbnm123456", false)
-	msg := make([]byte, 1024)
+func benchmarkDecrypt(b *testing.B, compress bool, msgLength int) {
+	c, _ := New("qwerty", "qwertyuiopasdfghjklzxcvbnm123456", compress)
+	msg := make([]byte, msgLength)
 	_, _ = io.ReadFull(rand.Reader, msg)
 
 	msg, _ = c.Encrypt(msg)
@@ -161,22 +151,11 @@ func BenchmarkDecryptUncompessed1K(b *testing.B) {
 	}
 }
 
-func BenchmarkDecryptCompessed1K(b *testing.B) {
-	c, _ := New("qwerty", "qwertyuiopasdfghjklzxcvbnm123456", true)
-	msg := make([]byte, 1024)
+func benchmarkWriter(b *testing.B, compress bool, msgLength int) {
+	msg := make([]byte, msgLength)
 	_, _ = io.ReadFull(rand.Reader, msg)
 
-	msg, _ = c.Encrypt(msg)
-	for n := 0; n < b.N; n++ {
-		_, _ = c.Decrypt(msg)
-	}
-}
-
-func BenchmarkWriterUncompressed1K(b *testing.B) {
-	msg := make([]byte, 1024)
-	_, _ = io.ReadFull(rand.Reader, msg)
-
-	w, _ := NewWriter(nil, "qwerty", "qwertyuiopasdfghjklzxcvbnm123456", false)
+	w, _ := NewWriter(nil, "qwerty", "qwertyuiopasdfghjklzxcvbnm123456", compress)
 
 	for n := 0; n < b.N; n++ {
 		var enc bytes.Buffer
@@ -186,11 +165,11 @@ func BenchmarkWriterUncompressed1K(b *testing.B) {
 	}
 }
 
-func BenchmarkReaderUncompressed1K(b *testing.B) {
-	msg := make([]byte, 1024)
+func benchmarkReader(b *testing.B, compress bool, msgLength int) {
+	msg := make([]byte, msgLength)
 	_, _ = io.ReadFull(rand.Reader, msg)
 
-	c, _ := New("qwerty", "qwertyuiopasdfghjklzxcvbnm123456", false)
+	c, _ := New("qwerty", "qwertyuiopasdfghjklzxcvbnm123456", compress)
 	enc, _ := c.Encrypt(msg)
 
 	r, _ := NewReader(nil, "qwerty", "qwertyuiopasdfghjklzxcvbnm123456")
@@ -203,4 +182,99 @@ func BenchmarkReaderUncompressed1K(b *testing.B) {
 		r.Reset(buf)
 		_, _ = r.Read(readbuf)
 	}
+}
+
+func BenchmarkEncryptUncompessed100b(b *testing.B) {
+	benchmarkEncrypt(b, false, 100)
+}
+func BenchmarkEncryptUncompessed1K(b *testing.B) {
+	benchmarkEncrypt(b, false, 1024)
+}
+
+func BenchmarkEncryptUncompessed1M(b *testing.B) {
+	benchmarkEncrypt(b, false, 1024*1024)
+}
+
+func BenchmarkEncryptCompessed100b(b *testing.B) {
+	benchmarkEncrypt(b, true, 100)
+}
+
+func BenchmarkEncryptCompessed1K(b *testing.B) {
+	benchmarkEncrypt(b, true, 1024)
+}
+
+func BenchmarkEncryptCompessed1M(b *testing.B) {
+	benchmarkEncrypt(b, true, 1024*1024)
+}
+
+func BenchmarkDecryptUncompessed100b(b *testing.B) {
+	benchmarkDecrypt(b, false, 100)
+}
+
+func BenchmarkDecryptUncompessed1K(b *testing.B) {
+	benchmarkDecrypt(b, false, 1024)
+}
+
+func BenchmarkDecryptUncompessed1M(b *testing.B) {
+	benchmarkDecrypt(b, false, 1024*1024)
+}
+
+func BenchmarkDecryptCompessed100b(b *testing.B) {
+	benchmarkDecrypt(b, true, 100)
+}
+
+func BenchmarkDecryptCompessed1K(b *testing.B) {
+	benchmarkDecrypt(b, true, 1024)
+}
+
+func BenchmarkDecryptCompessed1M(b *testing.B) {
+	benchmarkDecrypt(b, true, 1024*1024)
+}
+
+func BenchmarkWriterUncompressed100b(b *testing.B) {
+	benchmarkWriter(b, false, 100)
+}
+
+func BenchmarkWriterUncompressed1K(b *testing.B) {
+	benchmarkWriter(b, false, 1024)
+}
+
+func BenchmarkWriterUncompressed1M(b *testing.B) {
+	benchmarkWriter(b, false, 1024*1024)
+}
+
+func BenchmarkWriterCompressed1b(b *testing.B) {
+	benchmarkWriter(b, true, 100)
+}
+
+func BenchmarkWriterCompressed1K(b *testing.B) {
+	benchmarkWriter(b, true, 1024)
+}
+
+func BenchmarkWriterCompressed1M(b *testing.B) {
+	benchmarkWriter(b, true, 1024*1024)
+}
+
+func BenchmarkReaderUncompressed100b(b *testing.B) {
+	benchmarkReader(b, false, 100)
+}
+
+func BenchmarkReaderUncompressed1K(b *testing.B) {
+	benchmarkReader(b, false, 1024)
+}
+
+func BenchmarkReaderUncompressed1M(b *testing.B) {
+	benchmarkReader(b, false, 1024*1024)
+}
+
+func BenchmarkReaderCompressed100b(b *testing.B) {
+	benchmarkReader(b, true, 100)
+}
+
+func BenchmarkReaderCompressed1K(b *testing.B) {
+	benchmarkReader(b, true, 1024)
+}
+
+func BenchmarkReaderCompressed1M(b *testing.B) {
+	benchmarkReader(b, true, 1024*1024)
 }

@@ -3,6 +3,14 @@
 Cryptographer provides a simple way to encrypt or decrypt a message using NaCl secret key cryptography.
 Optionally it can compress the data before encrypting them.
 
+Beyond the default methods (`Encrypt(msg []byte)`, `Decrypt(msg []byte)`), it also provides an `io.Reader` and an
+`io.Writer` interface to decrypt or encrypt data. Since we don't have a stream cipher, these methods need to have available
+all the data before they make available their output. For `Writer` this means you have to `Flush()` or `Close()` before
+you can read the `io.Writer` you passed to the `Writer`. For `Reader` it means it will block until it reads all the data from
+the `io.Reader` you passed to it.
+
+`Read` and `Write` are slower than `Decrypt` and `Encrypt`.
+
 I use it for symmetric-key encryption schemes. Depending on your usage it may or may not be a safe option.
 I do not claim any expertise in cryptography.
 
@@ -13,6 +21,8 @@ Note: The compression status is set inside the message (last bit of the nonce), 
     import "github.com/andmarios/cryptographer"
 
 ## Example
+
+You may find more examples in the examples directory.
 
 ```go
 package main
