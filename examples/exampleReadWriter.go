@@ -13,7 +13,7 @@ func main() {
 
 Vivamus ut elit nec arcu congue malesuada nec eget enim. Aliquam erat volutpat. Phasellus auctor consequat est et hendrerit. Nullam vitae odio ac nisi blandit viverra. Curabitur consequat urna quis ante molestie viverra. Donec malesuada amet.`)
 
-	// Create a cryptographer Writer instance with compession enabled and "qwerty" as key.
+	// Create a cryptographer Writer instance with compression enabled and "qwerty" as key.
 	var encryptedMsg bytes.Buffer
 	w, err := cryptographer.NewWriter(&encryptedMsg, "qwerty", "qwertyuiopasdfghjklzxcvbnm123456", true)
 	if err != nil {
@@ -36,7 +36,7 @@ Vivamus ut elit nec arcu congue malesuada nec eget enim. Aliquam erat volutpat. 
 	}
 	log.Println("Decrypted message is:\n" + string(decryptedMsg))
 
-	// Re-user Writer and Reader
+	// Re-use Writer and Reader
 
 	msgNew := []byte("Hello world")
 
