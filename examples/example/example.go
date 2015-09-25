@@ -1,8 +1,9 @@
 package main
 
 import (
-	"github.com/andmarios/cryptographer"
 	"log"
+
+	"github.com/andmarios/cryptographer"
 )
 
 func main() {

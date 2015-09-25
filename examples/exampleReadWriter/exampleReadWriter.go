@@ -2,9 +2,10 @@ package main
 
 import (
 	"bytes"
-	"github.com/andmarios/cryptographer"
 	"io/ioutil"
 	"log"
+
+	"github.com/andmarios/cryptographer"
 )
 
 func main() {
