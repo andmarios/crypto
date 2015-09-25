@@ -7,7 +7,7 @@ import (
 	"github.com/andmarios/cryptographer"
 )
 
-func ExampleEncrypt() {
+func ExampleCryptographer_Encrypt() {
 	// Create a cryptographer instance with "qwerty" key and no compression.
 	c, err := cryptographer.New("qwerty", "qwertyuiopasdfghjklzxcvbnm123456", false)
 	if err != nil {
@@ -26,7 +26,7 @@ func ExampleEncrypt() {
 	fmt.Println("Encrypted message: ", encryptedMsg)
 }
 
-func ExampleDecrypt() {
+func ExampleCryptographer_Decrypt() {
 	// Create a cryptographer instance with "qwerty" key and no compression.
 	c, err := cryptographer.New("qwerty", "qwertyuiopasdfghjklzxcvbnm123456", false)
 	if err != nil {
