@@ -40,5 +40,5 @@ func ExampleSaltSecret_Decrypt() {
 		log.Fatalln(err)
 	}
 	fmt.Printf("Decrypted message is '%s'.\n", decryptedMsg)
-	// DEPOutput: Decrypted message is 'Hello World'.
+	// Output: Decrypted message is 'Hello World'.
 }

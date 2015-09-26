@@ -1,6 +1,7 @@
 /*
 Package saltsecret implements a simple library for on-the-fly
-NaCl secret key encryption and decryption.
+NaCl secret key (symmetric) encryption and decryption with a
+scrypt derived key.
 
 It is meant to be used for symmetric-key encryption schemes.
 Optionally it can (de)compress the data before (dec)encryption.
