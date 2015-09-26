@@ -1,4 +1,7 @@
 // Package crypto provides NaCl based encryption libraries.
+// For more information have a loot at:
+// https://godoc.org/github.com/andmarios/crypto/nacl/padsecret
+// https://godoc.org/github.com/andmarios/crypto/nacl/saltsecret
 package main
 
 import (
