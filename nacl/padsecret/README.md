@@ -4,7 +4,8 @@ Padsecret provides a simple way to encrypt or decrypt a message using NaCl secre
 Optionally it can compress the data before encrypting them.
 
 The encryption key is padded with a user provided pad. Padsecret is very fast, thus it is useful when you
-want to exchange many messages.
+want to exchange many messages. It is less secure from saltsecret, due to the constant user provided pad and
+some other design decisions (i.e key arguments as strings).
 
 Beyond the default methods (`Encrypt(msg []byte)`, `Decrypt(msg []byte)`), it also provides an `io.Reader` and an
 `io.Writer` interface to decrypt or encrypt data. Since we don't have a stream cipher, these methods need to have available
