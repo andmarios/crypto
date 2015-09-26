@@ -3,12 +3,12 @@ package main
 import (
 	"log"
 
-	"github.com/andmarios/cryptographer"
+	"github.com/andmarios/crypto/nacl/padsecret"
 )
 
 func main() {
 	// Create a cryptographer instance with "qwerty" key and no compression.
-	c, err := cryptographer.New("qwerty", "qwertyuiopasdfghjklzxcvbnm123456", false)
+	c, err := padsecret.New("qwerty", "qwertyuiopasdfghjklzxcvbnm123456", false)
 	if err != nil {
 		log.Fatalln(err)
 	}
@@ -33,7 +33,7 @@ Vivamus ut elit nec arcu congue malesuada nec eget enim. Aliquam erat volutpat. 
 	log.Println("Decrypted message is:\n" + string(decMsg))
 
 	// Create a cryptographer instance with "qwerty" key and compression.
-	c, err = cryptographer.New("qwerty", "qwertyuiopasdfghjklzxcvbnm123456", true)
+	c, err = padsecret.New("qwerty", "qwertyuiopasdfghjklzxcvbnm123456", true)
 	if err != nil {
 		log.Fatalln(err)
 	}

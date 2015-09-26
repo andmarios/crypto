@@ -1,15 +1,15 @@
-package cryptographer_test
+package padsecret_test
 
 import (
 	"fmt"
 	"log"
 
-	"github.com/andmarios/cryptographer"
+	"github.com/andmarios/crypto/nacl/padsecret"
 )
 
-func ExampleCryptographer_Encrypt() {
-	// Create a cryptographer instance with "password" key and no compression.
-	c, err := cryptographer.New("password", "qwertyuiopasdfghjklzxcvbnm123456", false)
+func ExamplePadSecret_Encrypt() {
+	// Create a padsecret instance with "password" key and no compression.
+	c, err := padsecret.New("password", "qwertyuiopasdfghjklzxcvbnm123456", false)
 	if err != nil {
 		log.Fatalln(err)
 	}
@@ -26,9 +26,9 @@ func ExampleCryptographer_Encrypt() {
 	fmt.Println("Encrypted message:", encryptedMsg)
 }
 
-func ExampleCryptographer_Decrypt() {
-	// Create a cryptographer instance with "password" key and no compression.
-	c, err := cryptographer.New("password", "qwertyuiopasdfghjklzxcvbnm123456", false)
+func ExamplePadSecret_Decrypt() {
+	// Create a padsecret instance with "password" key and no compression.
+	c, err := padsecret.New("password", "qwertyuiopasdfghjklzxcvbnm123456", false)
 	if err != nil {
 		log.Fatalln(err)
 	}

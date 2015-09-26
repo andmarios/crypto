@@ -1,7 +1,10 @@
-# cryptographer (golang package)
+# padsecret (golang package)
 
-Cryptographer provides a simple way to encrypt or decrypt a message using NaCl secret key cryptography.
+Padsecret provides a simple way to encrypt or decrypt a message using NaCl secret key cryptography.
 Optionally it can compress the data before encrypting them.
+
+The encryption key is padded with a user provided pad. Padsecret is very fast, thus it is useful when you
+want to exchange many messages.
 
 Beyond the default methods (`Encrypt(msg []byte)`, `Decrypt(msg []byte)`), it also provides an `io.Reader` and an
 `io.Writer` interface to decrypt or encrypt data. Since we don't have a stream cipher, these methods need to have available
@@ -18,7 +21,7 @@ Note: The compression status is set inside the message (last bit of the nonce), 
 
 ## Usage
 
-    import "github.com/andmarios/cryptographer"
+    import "github.com/andmarios/crypto/nacl/padsecret"
 
 ## Example
 
@@ -28,13 +31,13 @@ You may find more examples in the examples directory.
 package main
 
 import (
-	"github.com/andmarios/cryptographer"
+	"github.com/andmarios/crypto/nacl/padsecret"
 	"log"
 )
 
 func main() {
-	// Create a cryptographer instance with "qwerty" key and no compression.
-	c, err := cryptographer.New("qwerty", "qwertyuiopasdfghjklzxcvbnm123456", false)
+	// Create a padsecret instance with "qwerty" key and no compression.
+	c, err := padsecret.New("qwerty", "qwertyuiopasdfghjklzxcvbnm123456", false)
 	if err != nil {
 		log.Fatalln(err)
 	}

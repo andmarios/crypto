@@ -1,28 +1,33 @@
 /*
-Package cryptographer implements a simple library for on-the-fly
+Package padsecret implements a simple library for on-the-fly
 NaCl secret key encryption and decryption.
 
 It is meant to be used for symmetric-key encryption schemes.
 Optionally it can (de)compress the data before (dec)encryption.
 
+The user key is padded with a user provided pad. The key is common
+for all messages that come from a padsecret instance. This makes
+padsecret very fast, albeit less secure.
+
 Beyond the recommended methods (Encrypt, Decrypt) it also implements
 the io.ReadWriter interface which is slower. You may run the benchmarks
-from cryptographer_test.go to decide if it is acceptable.
+from padsecret_test.go to decide if it is acceptable.
 
 One bit of the NaCl's nonce is used to indicate whether the message was
 compressed before encrypting. Still the algorithm should remain safe
 since nonce collisions are again extremely rare.
 */
-package cryptographer
+package padsecret
 
 import (
 	"bytes"
 	"compress/zlib"
 	"crypto/rand"
 	"errors"
-	"golang.org/x/crypto/nacl/secretbox"
 	"io"
 	"io/ioutil"
+
+	"golang.org/x/crypto/nacl/secretbox"
 )
 
 // These are defined in golang.org/x/crypto/nacl/secretbox
@@ -33,29 +38,29 @@ const (
 
 const compressBit byte = 0x01
 
-// A Cryptographer holds the instance's key and the compression settings.
-type Cryptographer struct {
+// A PadSecret holds the instance's key and the compression settings.
+type PadSecret struct {
 	key      *[keySize]byte
 	compress bool
 }
 
-// New creates a new Cryptographer instance. key is the key used for encryption,
+// New creates a new PadSecret instance. key is the key used for encryption,
 // pad is the padding to be used (at least 32 bytes), if the key is smaller than 32 bytes.
 // compress indicates whether the data should be compessed (zlib) before encrypting.
 // The pad can be a const in your code.
-func New(key, pad string, compress bool) (*Cryptographer, error) {
+func New(key, pad string, compress bool) (*PadSecret, error) {
 	naclKey, err := constructKey(key, pad)
 	if err != nil {
 		return nil, err
 	}
-	return &Cryptographer{naclKey, compress}, nil
+	return &PadSecret{naclKey, compress}, nil
 }
 
 func constructKey(key, pad string) (naclKey *[32]byte, e error) {
 	tKey := []byte(key)
 	tPad := []byte(pad)
 	if len(tPad) < 32 {
-		return nil, errors.New("cryptographer pad should be 32 bytes or more")
+		return nil, errors.New("padsecret pad should be 32 bytes or more")
 	}
 	tKey = append(tKey, tPad...)
 	naclKey = new([keySize]byte)
@@ -65,7 +70,7 @@ func constructKey(key, pad string) (naclKey *[32]byte, e error) {
 
 // Encrypt encrypts a message and returns the encrypted msg (nonce + ciphertext).
 // If you have enabled compression, it will compress the msg before encrypting it.
-func (c Cryptographer) Encrypt(msg []byte) (out []byte, e error) {
+func (c PadSecret) Encrypt(msg []byte) (out []byte, e error) {
 	nonce := new([nonceSize]byte)
 	_, err := io.ReadFull(rand.Reader, nonce[:])
 	if err != nil {
@@ -95,7 +100,7 @@ func (c Cryptographer) Encrypt(msg []byte) (out []byte, e error) {
 // Decrypt decrypts an encrypted message and returns it (plaintext).
 // If you have enabled compression, it wil detect it and decompress
 // the msg after decrypting it.
-func (c Cryptographer) Decrypt(msg []byte) ([]byte, error) {
+func (c PadSecret) Decrypt(msg []byte) ([]byte, error) {
 	if len(msg) < nonceSize+secretbox.Overhead {
 		return nil, errors.New("encrypted message length too short")
 	}
@@ -130,11 +135,11 @@ type Reader struct {
 	msg       []byte
 	done      bool
 	firstRead bool
-	c         *Cryptographer
+	c         *PadSecret
 }
 
-func newInternal(naclKey *[32]byte, compress bool) *Cryptographer {
-	return &Cryptographer{naclKey, compress}
+func newInternal(naclKey *[32]byte, compress bool) *PadSecret {
+	return &PadSecret{naclKey, compress}
 }
 
 // NewReader creates a new Reader. Reads from the returned Reader read,
@@ -200,7 +205,7 @@ func (d *Reader) Reset(r io.Reader) {
 type Writer struct {
 	w           io.Writer
 	unencrypted []byte
-	c           *Cryptographer
+	c           *PadSecret
 }
 
 // NewWriter creates a new writer. Writes to the returned Writer are encrypted and,

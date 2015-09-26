@@ -1,4 +1,4 @@
-package cryptographer
+package padsecret
 
 import (
 	"bytes"
@@ -50,7 +50,7 @@ func TestPackage(t *testing.T) {
 
 	decc, err = c.Decrypt(encc)
 	if bytes.Compare(decc, msg) != 0 {
-		t.Errorf("Decoded compressed message '%v' differs from compressed encoded message '%v' when using a compressing and a non-compressing cryptographer instance.", dec, msg)
+		t.Errorf("Decoded compressed message '%v' differs from compressed encoded message '%v' when using a compressing and a non-compressing padsecret instance.", dec, msg)
 	}
 
 	r, _ := NewReader(bytes.NewReader(enc), "qwerty", "qwertyuiopasdfghjklzxcvbnm123456")

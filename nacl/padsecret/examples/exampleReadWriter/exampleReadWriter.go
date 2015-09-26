@@ -5,7 +5,7 @@ import (
 	"io/ioutil"
 	"log"
 
-	"github.com/andmarios/cryptographer"
+	"github.com/andmarios/crypto/nacl/padsecret"
 )
 
 func main() {
@@ -16,7 +16,7 @@ Vivamus ut elit nec arcu congue malesuada nec eget enim. Aliquam erat volutpat. 
 
 	// Create a cryptographer Writer instance with compression enabled and "qwerty" as key.
 	var encryptedMsg bytes.Buffer
-	w, err := cryptographer.NewWriter(&encryptedMsg, "qwerty", "qwertyuiopasdfghjklzxcvbnm123456", true)
+	w, err := padsecret.NewWriter(&encryptedMsg, "qwerty", "qwertyuiopasdfghjklzxcvbnm123456", true)
 	if err != nil {
 		log.Fatalln(err)
 	}
@@ -26,7 +26,7 @@ Vivamus ut elit nec arcu congue malesuada nec eget enim. Aliquam erat volutpat. 
 	w.Flush()
 
 	// Create a cryptographer Reader instance with "qwerty" key and pass to it the encrypted message.
-	r, err := cryptographer.NewReader(bytes.NewReader(encryptedMsg.Bytes()), "qwerty", "qwertyuiopasdfghjklzxcvbnm123456")
+	r, err := padsecret.NewReader(bytes.NewReader(encryptedMsg.Bytes()), "qwerty", "qwertyuiopasdfghjklzxcvbnm123456")
 	if err != nil {
 		log.Fatalln(err)
 	}
