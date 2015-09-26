@@ -23,7 +23,7 @@ func ExampleCryptographer_Encrypt() {
 		log.Fatalln(err)
 	}
 
-	fmt.Println("Encrypted message: ", encryptedMsg)
+	fmt.Println("Encrypted message:", encryptedMsg)
 }
 
 func ExampleCryptographer_Decrypt() {
@@ -33,10 +33,10 @@ func ExampleCryptographer_Decrypt() {
 		log.Fatalln(err)
 	}
 
-	encryptedMsg := []byte{173, 25, 228, 30, 140, 142, 245, 186, 114, 121,
-		122, 174, 252, 221, 52, 154, 25, 3, 119, 18, 222, 148, 0, 80,
-		32, 190, 67, 167, 34, 69, 7, 38, 5, 139, 165, 56, 32, 131, 13,
-		185, 10, 43, 148, 3, 81, 181, 31, 155, 48, 209, 169}
+	encryptedMsg := []byte{24, 68, 38, 21, 142, 73, 109, 222, 45, 135, 233,
+		83, 12, 196, 148, 10, 195, 133, 33, 12, 86, 15, 78, 100, 164,
+		74, 190, 96, 174, 182, 134, 119, 13, 12, 132, 189, 125, 16, 205,
+		79, 14, 204, 15, 20, 235, 42, 24, 4, 7, 82, 39}
 
 	// Decrypt message
 	decryptedMsg, err := c.Decrypt(encryptedMsg)
