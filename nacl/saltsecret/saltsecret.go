@@ -33,6 +33,11 @@ import (
 	"golang.org/x/crypto/scrypt"
 )
 
+const (
+	ENCRYPT = iota
+	DECRYPT
+)
+
 // These are defined in golang.org/x/crypto/nacl/secretbox
 const (
 	keySize   = 32
@@ -128,8 +133,8 @@ func (c SaltSecret) Decrypt(msg []byte) ([]byte, error) {
 	return out, nil
 }
 
-// A Reader reads data from another Reader, decrypts and, if needed,
-// decompress them into a []byte variable.
+// A Reader reads data from another Reader, encrypts or decrypts and,
+// if needed, (de)compress them into a []byte variable.
 // A Reader may be re-used by using Reset.
 type Reader struct {
 	r         io.Reader
@@ -137,24 +142,24 @@ type Reader struct {
 	done      bool
 	firstRead bool
 	c         *SaltSecret
-}
-
-// TODO: DEPRECATED
-func newInternal(key []byte, compress bool) *SaltSecret {
-	return &SaltSecret{key, compress}
+	mode      int
 }
 
 // NewReader creates a new Reader. Reads from the returned Reader read,
-// unencrypt and decompress, if needed, data from r. The implementation
-// needs to read all data from r at once, since we do not use a stream
-// cipher. Pad should be at least 32 bytes long.
-func NewReader(r io.Reader, key []byte) (*Reader, error) {
-	return &Reader{r, nil, false, true, &SaltSecret{key, false}}, nil
+// encrypt or decrypt (and (de)compress, if needed), data from r.
+// The implementation needs to read all data from r at once, since we do
+// not use a stream cipher. mode is either saltsecret.ENCRYPT (0), or
+// saltsecret.DECRYPT (1)
+func NewReader(r io.Reader, key []byte, mode int, compress bool) (*Reader, error) {
+	if mode != ENCRYPT && mode != DECRYPT {
+		return &Reader{}, errors.New("Mode should be saltsecret.ENCRYPT or saltsecret.DECRYPT.")
+	}
+	return &Reader{r, nil, false, true, &SaltSecret{key, compress}, mode}, nil
 }
 
-// Read reads into p an unecrypted and, if needed, uncompressed form
-// of the bytes from the underlying Reader. Read needs to read all
-// data from the underlying Reader before it can decrypt them.
+// Read reads into p an encrypted or decrypted and, if needed, (de)compressed
+// form of the bytes from the underlying Reader. Read needs to read all
+// data from the underlying Reader before it can operate on them.
 func (d *Reader) Read(p []byte) (n int, err error) {
 	if d.done {
 		return 0, io.EOF
@@ -166,10 +171,18 @@ func (d *Reader) Read(p []byte) (n int, err error) {
 	}
 
 	if d.firstRead {
-		d.msg, err = d.c.Decrypt(msg)
-		if err != nil {
-			d.done = true
-			return 0, errors.New("could not decrypt input: " + err.Error())
+		if d.mode == DECRYPT {
+			d.msg, err = d.c.Decrypt(msg)
+			if err != nil {
+				d.done = true
+				return 0, errors.New("could not decrypt input: " + err.Error())
+			}
+		} else {
+			d.msg, err = d.c.Encrypt(msg)
+			if err != nil {
+				d.done = true
+				return 0, errors.New("could not encrypt input: " + err.Error())
+			}
 		}
 		d.firstRead = false
 	}
@@ -198,36 +211,46 @@ func (d *Reader) Reset(r io.Reader) {
 	d.firstRead = true
 }
 
-// A Writer takes data written to it and writes the encrypted and, if needed,
-// compressed form of that data to an underlying writer.
+// A Writer takes data written to it and writes the encrypted or decrypted
+// and, if needed, (de)compressed form of that data to an underlying writer.
 type Writer struct {
-	w           io.Writer
-	unencrypted []byte
-	c           *SaltSecret
+	w    io.Writer
+	in   []byte
+	c    *SaltSecret
+	mode int
 }
 
-// NewWriter creates a new writer. Writes to the returned Writer are encrypted and,
-// if needed, compressed and written to w.
+// NewWriter creates a new writer. Writes to the returned Writer are encrypted or
+// decrypted and, if needed, (de)compressed and written to w.
 //
 // It is the caller's responsibility to call Close() on WriteCloser when done, since
-// we do not use a stream cipher, we need to have all the data before encrypting them.
-func NewWriter(w io.Writer, key []byte, compress bool) (*Writer, error) {
-	return &Writer{w, nil, &SaltSecret{key, compress}}, nil
+// we do not use a stream cipher, we need to have all the data before operating on them.
+func NewWriter(w io.Writer, key []byte, mode int, compress bool) (*Writer, error) {
+	if mode != ENCRYPT && mode != DECRYPT {
+		return &Writer{}, errors.New("Mode should be saltsecret.ENCRYPT or saltsecret.DECRYPT.")
+	}
+	return &Writer{w, nil, &SaltSecret{key, compress}, mode}, nil
 }
 
-// Write writes and encrypted and, if needed, compressed form of p to the underlying
-// io.Writer. The compressed bytes are not written until the Writer is closed or
+// Write writes and encrypts or decrypts (and, if needed, a (de)compressed) form of p to the underlying
+// io.Writer. The produced bytes are not written until the Writer is closed or
 // explicitly flushed.
 func (e *Writer) Write(p []byte) (n int, err error) {
-	e.unencrypted = append(e.unencrypted, p...)
+	e.in = append(e.in, p...)
 	return len(p), nil
 }
 
-// Flush encrypts and compresses, if needed, the data written to the writer.
+// Flush encrypt or decrypts  and (de)compresses, if needed, the data written to the writer.
 // After a Flush, the writer has to be Reset in order to write to it again.
 func (e *Writer) Flush() error {
 	var err error
-	write, err := e.c.Encrypt(e.unencrypted)
+	write := make([]byte, 0)
+	switch e.mode {
+	case ENCRYPT:
+		write, err = e.c.Encrypt(e.in)
+	case DECRYPT:
+		write, err = e.c.Decrypt(e.in)
+	}
 	if err != nil {
 		return err
 	}
@@ -247,5 +270,5 @@ func (e *Writer) Close() error {
 // initial state from NewWriter, but instead writing to w.
 func (e *Writer) Reset(w io.Writer) {
 	e.w = w
-	e.unencrypted = nil
+	e.in = nil
 }

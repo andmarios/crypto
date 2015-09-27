@@ -43,13 +43,17 @@ func TestPackage(t *testing.T) {
 		t.Errorf("Decoded compressed message '%v' differs from compressed encoded message '%v' when using a compressing and a non-compressing saltsecret instance.", dec, msg)
 	}
 
-	r, _ := NewReader(bytes.NewReader(enc), []byte([]byte("qwerty")))
+	r, err := NewReader(bytes.NewReader(enc), []byte([]byte("qwerty")), 2, false)
+	if err == nil {
+		t.Errorf("NewReader() accepts non existant mode.")
+	}
+	r, _ = NewReader(bytes.NewReader(enc), []byte([]byte("qwerty")), DECRYPT, false)
 	decr, err := ioutil.ReadAll(r)
 	if err != nil {
 		t.Errorf("Error while decoding with Reader.", err)
 	}
 	if bytes.Compare(decr, msg) != 0 {
-		t.Errorf("Reader() failed. Decoded message '%v' differs from encoded message '%v'.", decr, msg)
+		t.Errorf("Reader() decrypt failed. Decoded message '%v' differs from encoded message '%v'.", decr, msg)
 	}
 
 	r.Reset(bytes.NewReader(encc))
@@ -61,8 +65,22 @@ func TestPackage(t *testing.T) {
 		t.Errorf("Reset() Reader failed. Decoded message '%v' differs from encoded message '%v'.", decrr, msg)
 	}
 
+	re, _ := NewReader(bytes.NewReader(msg), []byte([]byte("qwerty")), ENCRYPT, false)
+	recr, _ := ioutil.ReadAll(re)
+	if err != nil {
+		t.Errorf("Error while decoding with Reader.", err)
+	}
+	drecr, err := c.Decrypt(recr)
+	if bytes.Compare(drecr, msg) != 0 {
+		t.Errorf("Reader() encrypt failed. Decoded message '%v' differs from encoded message '%v'.", drecr, msg)
+	}
+
 	var encr bytes.Buffer
-	w, _ := NewWriter(&encr, []byte([]byte("qwerty")), true)
+	w, err := NewWriter(&encr, []byte([]byte("qwerty")), 2, true)
+	if err == nil {
+		t.Errorf("NewWriter() accepts non existant mode.")
+	}
+	w, _ = NewWriter(&encr, []byte([]byte("qwerty")), ENCRYPT, true)
 	w.Write(msg)
 	w.Flush()
 	dencr, err := c.Decrypt(encr.Bytes())
@@ -70,7 +88,7 @@ func TestPackage(t *testing.T) {
 		t.Errorf("Error while decrypting Writer() output.", err)
 	}
 	if bytes.Compare(dencr, msg) != 0 {
-		t.Errorf("Writer() failed. Decoded message '%v' differs from encoded message '%v'.", dencr, msg)
+		t.Errorf("Writer() encrypt failed. Decoded message '%v' differs from encoded message '%v'.", dencr, msg)
 	}
 
 	var encrr bytes.Buffer
@@ -83,6 +101,14 @@ func TestPackage(t *testing.T) {
 	}
 	if bytes.Compare(dencrr, msg) != 0 {
 		t.Errorf("Reset() Writer failed. Decoded message '%v' differs from encoded message '%v'.", dencrr, msg)
+	}
+
+	var dwncr bytes.Buffer
+	wd, _ := NewWriter(&dwncr, []byte("qwerty"), DECRYPT, true)
+	wd.Write(encrr.Bytes())
+	wd.Flush()
+	if bytes.Compare(dwncr.Bytes(), msg) != 0 {
+		t.Errorf("Writer() decrypt failed. Decoded message '%v' differs from encoded message '%v'.", dwncr.Bytes(), msg)
 	}
 
 	bigMsg := make([]byte, 1024*1024) // 1MiB
@@ -145,7 +171,7 @@ func benchmarkWriter(b *testing.B, compress bool, msgLength int) {
 	msg := make([]byte, msgLength)
 	_, _ = io.ReadFull(rand.Reader, msg)
 
-	w, _ := NewWriter(nil, []byte("qwerty"), compress)
+	w, _ := NewWriter(nil, []byte("qwerty"), ENCRYPT, compress)
 
 	for n := 0; n < b.N; n++ {
 		var enc bytes.Buffer
@@ -162,7 +188,7 @@ func benchmarkReader(b *testing.B, compress bool, msgLength int) {
 	c := New([]byte("qwerty"), compress)
 	enc, _ := c.Encrypt(msg)
 
-	r, _ := NewReader(nil, []byte("qwerty"))
+	r, _ := NewReader(nil, []byte("qwerty"), DECRYPT, false)
 
 	buf := bytes.NewReader(enc)
 	readbuf := make([]byte, 1024)

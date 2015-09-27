@@ -14,9 +14,9 @@ func main() {
 
 Vivamus ut elit nec arcu congue malesuada nec eget enim. Aliquam erat volutpat. Phasellus auctor consequat est et hendrerit. Nullam vitae odio ac nisi blandit viverra. Curabitur consequat urna quis ante molestie viverra. Donec malesuada amet.`)
 
-	// Create a cryptographer Writer instance with compression enabled and "qwerty" as key.
+	// Create a cryptographer Writer instance which encrypts with compression enabled and "qwerty" as key.
 	var encryptedMsg bytes.Buffer
-	w, err := saltsecret.NewWriter(&encryptedMsg, []byte("qwerty"), true)
+	w, err := saltsecret.NewWriter(&encryptedMsg, []byte("qwerty"), saltsecret.ENCRYPT, true)
 	if err != nil {
 		log.Fatalln(err)
 	}
@@ -25,8 +25,8 @@ Vivamus ut elit nec arcu congue malesuada nec eget enim. Aliquam erat volutpat. 
 	// Call Flush (or Close) so the Writer knows it got all the data and thus can encrypt them.
 	w.Flush()
 
-	// Create a cryptographer Reader instance with "qwerty" key and pass to it the encrypted message.
-	r, err := saltsecret.NewReader(bytes.NewReader(encryptedMsg.Bytes()), []byte("qwerty"))
+	// Create a cryptographer Reader instance with "qwerty" key that decrypts and pass to it the encrypted message.
+	r, err := saltsecret.NewReader(bytes.NewReader(encryptedMsg.Bytes()), []byte("qwerty"), saltsecret.DECRYPT, false)
 	if err != nil {
 		log.Fatalln(err)
 	}
