@@ -247,50 +247,50 @@ func BenchmarkDecryptCompessed1M(b *testing.B) {
 	benchmarkDecrypt(b, true, 1024*1024)
 }
 
-func BenchmarkWriterUncompressed100b(b *testing.B) {
+func BenchmarkEncryptWriterUncompressed100b(b *testing.B) {
 	benchmarkWriter(b, false, 100)
 }
 
-func BenchmarkWriterUncompressed1K(b *testing.B) {
+func BenchmarkEncryptWriterUncompressed1K(b *testing.B) {
 	benchmarkWriter(b, false, 1024)
 }
 
-func BenchmarkWriterUncompressed1M(b *testing.B) {
+func BenchmarkEncryptWriterUncompressed1M(b *testing.B) {
 	benchmarkWriter(b, false, 1024*1024)
 }
 
-func BenchmarkWriterCompressed1b(b *testing.B) {
+func BenchmarkEncryptWriterCompressed1b(b *testing.B) {
 	benchmarkWriter(b, true, 100)
 }
 
-func BenchmarkWriterCompressed1K(b *testing.B) {
+func BenchmarkEncryptWriterCompressed1K(b *testing.B) {
 	benchmarkWriter(b, true, 1024)
 }
 
-func BenchmarkWriterCompressed1M(b *testing.B) {
+func BenchmarkEncryptWriterCompressed1M(b *testing.B) {
 	benchmarkWriter(b, true, 1024*1024)
 }
 
-func BenchmarkReaderUncompressed100b(b *testing.B) {
+func BenchmarkDecryptReaderUncompressed100b(b *testing.B) {
 	benchmarkReader(b, false, 100)
 }
 
-func BenchmarkReaderUncompressed1K(b *testing.B) {
+func BenchmarkDecryptReaderUncompressed1K(b *testing.B) {
 	benchmarkReader(b, false, 1024)
 }
 
-func BenchmarkReaderUncompressed1M(b *testing.B) {
+func BenchmarkDecryptReaderUncompressed1M(b *testing.B) {
 	benchmarkReader(b, false, 1024*1024)
 }
 
-func BenchmarkReaderCompressed100b(b *testing.B) {
+func BenchmarkDecryptReaderCompressed100b(b *testing.B) {
 	benchmarkReader(b, true, 100)
 }
 
-func BenchmarkReaderCompressed1K(b *testing.B) {
+func BenchmarkDecryptReaderCompressed1K(b *testing.B) {
 	benchmarkReader(b, true, 1024)
 }
 
-func BenchmarkReaderCompressed1M(b *testing.B) {
+func BenchmarkDecryptReaderCompressed1M(b *testing.B) {
 	benchmarkReader(b, true, 1024*1024)
 }

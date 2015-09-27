@@ -14,9 +14,9 @@ func main() {
 
 Vivamus ut elit nec arcu congue malesuada nec eget enim. Aliquam erat volutpat. Phasellus auctor consequat est et hendrerit. Nullam vitae odio ac nisi blandit viverra. Curabitur consequat urna quis ante molestie viverra. Donec malesuada amet.`)
 
-	// Create a cryptographer Writer instance with compression enabled and "qwerty" as key.
+	// Create a cryptographer Writer instance that encrypts with compression enabled and "qwerty" as key.
 	var encryptedMsg bytes.Buffer
-	w, err := padsecret.NewWriter(&encryptedMsg, "qwerty", "qwertyuiopasdfghjklzxcvbnm123456", true)
+	w, err := padsecret.NewWriter(&encryptedMsg, "qwerty", "qwertyuiopasdfghjklzxcvbnm123456", padsecret.ENCRYPT, true)
 	if err != nil {
 		log.Fatalln(err)
 	}
@@ -25,8 +25,8 @@ Vivamus ut elit nec arcu congue malesuada nec eget enim. Aliquam erat volutpat. 
 	// Call Flush (or Close) so the Writer knows it got all the data and thus can encrypt them.
 	w.Flush()
 
-	// Create a cryptographer Reader instance with "qwerty" key and pass to it the encrypted message.
-	r, err := padsecret.NewReader(bytes.NewReader(encryptedMsg.Bytes()), "qwerty", "qwertyuiopasdfghjklzxcvbnm123456")
+	// Create a cryptographer Reader instance with "qwerty" key that decrpyts and pass to it the encrypted message.
+	r, err := padsecret.NewReader(bytes.NewReader(encryptedMsg.Bytes()), "qwerty", "qwertyuiopasdfghjklzxcvbnm123456", padsecret.DECRYPT, false)
 	if err != nil {
 		log.Fatalln(err)
 	}

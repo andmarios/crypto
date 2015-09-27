@@ -33,6 +33,7 @@ import (
 	"golang.org/x/crypto/scrypt"
 )
 
+// Operation mode for Reader and Writer
 const (
 	ENCRYPT = iota
 	DECRYPT
@@ -149,7 +150,7 @@ type Reader struct {
 // encrypt or decrypt (and (de)compress, if needed), data from r.
 // The implementation needs to read all data from r at once, since we do
 // not use a stream cipher. mode is either saltsecret.ENCRYPT (0), or
-// saltsecret.DECRYPT (1)
+// saltsecret.DECRYPT (1).
 func NewReader(r io.Reader, key []byte, mode int, compress bool) (*Reader, error) {
 	if mode != ENCRYPT && mode != DECRYPT {
 		return &Reader{}, errors.New("Mode should be saltsecret.ENCRYPT or saltsecret.DECRYPT.")
@@ -171,18 +172,15 @@ func (d *Reader) Read(p []byte) (n int, err error) {
 	}
 
 	if d.firstRead {
-		if d.mode == DECRYPT {
+		switch d.mode {
+		case DECRYPT:
 			d.msg, err = d.c.Decrypt(msg)
-			if err != nil {
-				d.done = true
-				return 0, errors.New("could not decrypt input: " + err.Error())
-			}
-		} else {
+		case ENCRYPT:
 			d.msg, err = d.c.Encrypt(msg)
-			if err != nil {
-				d.done = true
-				return 0, errors.New("could not encrypt input: " + err.Error())
-			}
+		}
+		if err != nil {
+			d.done = true
+			return 0, errors.New("could not operate on input: " + err.Error())
 		}
 		d.firstRead = false
 	}
