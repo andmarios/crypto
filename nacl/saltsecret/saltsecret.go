@@ -48,16 +48,20 @@ const (
 const compressBit byte = 0x01
 
 // A SaltSecret holds the instance's key and the compression settings.
+// Npow is the N power of two iterations to run the algorithm for.
+// Default is 14 which is the recommended for interactive logins as of 2009.
+// You have to set it explicitly, after creating a SaltSecret, Reader or Writer.
 type SaltSecret struct {
 	key      []byte
 	compress bool
+	NPow     uint
 }
 
 // New creates a new SaltSecret instance. key is the key used for encryption.
 // For every message the encryption key will be derived by the key and a random salt.
 // compress indicates whether the data should be compessed (zlib) before encrypting.
 func New(key []byte, compress bool) *SaltSecret {
-	return &SaltSecret{key, compress}
+	return &SaltSecret{key, compress, 14}
 }
 
 // Encrypt encrypts a message and returns the encrypted msg (nonce + ciphertext).
@@ -76,7 +80,7 @@ func (c SaltSecret) Encrypt(msg []byte) (out []byte, e error) {
 		nonce[23] |= compressBit
 	}
 
-	key, err := scrypt.Key(c.key, nonce[:], 2<<14, 8, 1, keySize)
+	key, err := scrypt.Key(c.key, nonce[:], 2<<c.NPow, 8, 1, keySize)
 	if err != nil {
 		return nil, err
 	}
@@ -108,7 +112,7 @@ func (c SaltSecret) Decrypt(msg []byte) ([]byte, error) {
 	nonce := new([nonceSize]byte)
 	copy(nonce[:], msg[:nonceSize])
 
-	key, err := scrypt.Key(c.key, nonce[:], 2<<14, 8, 1, keySize)
+	key, err := scrypt.Key(c.key, nonce[:], 2<<c.NPow, 8, 1, keySize)
 	if err != nil {
 		return nil, err
 	}
@@ -142,7 +146,7 @@ type Reader struct {
 	msg       []byte
 	done      bool
 	firstRead bool
-	c         *SaltSecret
+	C         *SaltSecret
 	mode      int
 }
 
@@ -155,7 +159,7 @@ func NewReader(r io.Reader, key []byte, mode int, compress bool) (*Reader, error
 	if mode != ENCRYPT && mode != DECRYPT {
 		return &Reader{}, errors.New("Mode should be saltsecret.ENCRYPT or saltsecret.DECRYPT.")
 	}
-	return &Reader{r, nil, false, true, &SaltSecret{key, compress}, mode}, nil
+	return &Reader{r, nil, false, true, &SaltSecret{key, compress, 14}, mode}, nil
 }
 
 // Read reads into p an encrypted or decrypted and, if needed, (de)compressed
@@ -174,9 +178,9 @@ func (d *Reader) Read(p []byte) (n int, err error) {
 	if d.firstRead {
 		switch d.mode {
 		case DECRYPT:
-			d.msg, err = d.c.Decrypt(msg)
+			d.msg, err = d.C.Decrypt(msg)
 		case ENCRYPT:
-			d.msg, err = d.c.Encrypt(msg)
+			d.msg, err = d.C.Encrypt(msg)
 		}
 		if err != nil {
 			d.done = true
@@ -214,7 +218,7 @@ func (d *Reader) Reset(r io.Reader) {
 type Writer struct {
 	w    io.Writer
 	in   []byte
-	c    *SaltSecret
+	C    *SaltSecret
 	mode int
 }
 
@@ -227,7 +231,7 @@ func NewWriter(w io.Writer, key []byte, mode int, compress bool) (*Writer, error
 	if mode != ENCRYPT && mode != DECRYPT {
 		return &Writer{}, errors.New("Mode should be saltsecret.ENCRYPT or saltsecret.DECRYPT.")
 	}
-	return &Writer{w, nil, &SaltSecret{key, compress}, mode}, nil
+	return &Writer{w, nil, &SaltSecret{key, compress, 14}, mode}, nil
 }
 
 // Write writes and encrypts or decrypts (and, if needed, a (de)compressed) form of p to the underlying
@@ -242,12 +246,13 @@ func (e *Writer) Write(p []byte) (n int, err error) {
 // After a Flush, the writer has to be Reset in order to write to it again.
 func (e *Writer) Flush() error {
 	var err error
-	write := make([]byte, 0)
+	var write []byte
+
 	switch e.mode {
 	case ENCRYPT:
-		write, err = e.c.Encrypt(e.in)
+		write, err = e.C.Encrypt(e.in)
 	case DECRYPT:
-		write, err = e.c.Decrypt(e.in)
+		write, err = e.C.Decrypt(e.in)
 	}
 	if err != nil {
 		return err

@@ -146,8 +146,11 @@ func TestPackage(t *testing.T) {
 	}
 }
 
-func benchmarkEncrypt(b *testing.B, compress bool, msgLength int) {
+func benchmarkEncrypt(b *testing.B, compress bool, msgLength int, a ...uint) {
 	c := New([]byte("qwerty"), compress)
+	if len(a) > 0 {
+		c.NPow = a[0]
+	}
 	msg := make([]byte, msgLength)
 	_, _ = io.ReadFull(rand.Reader, msg)
 
@@ -156,8 +159,11 @@ func benchmarkEncrypt(b *testing.B, compress bool, msgLength int) {
 	}
 }
 
-func benchmarkDecrypt(b *testing.B, compress bool, msgLength int) {
+func benchmarkDecrypt(b *testing.B, compress bool, msgLength int, a ...uint) {
 	c := New([]byte("qwerty"), compress)
+	if len(a) > 0 {
+		c.NPow = a[0]
+	}
 	msg := make([]byte, msgLength)
 	_, _ = io.ReadFull(rand.Reader, msg)
 
@@ -167,12 +173,14 @@ func benchmarkDecrypt(b *testing.B, compress bool, msgLength int) {
 	}
 }
 
-func benchmarkWriter(b *testing.B, compress bool, msgLength int) {
+func benchmarkWriter(b *testing.B, compress bool, msgLength int, a ...uint) {
 	msg := make([]byte, msgLength)
 	_, _ = io.ReadFull(rand.Reader, msg)
 
 	w, _ := NewWriter(nil, []byte("qwerty"), ENCRYPT, compress)
-
+	if len(a) > 0 {
+		w.C.NPow = a[0]
+	}
 	for n := 0; n < b.N; n++ {
 		var enc bytes.Buffer
 		w.Reset(&enc)
@@ -181,15 +189,20 @@ func benchmarkWriter(b *testing.B, compress bool, msgLength int) {
 	}
 }
 
-func benchmarkReader(b *testing.B, compress bool, msgLength int) {
+func benchmarkReader(b *testing.B, compress bool, msgLength int, a ...uint) {
 	msg := make([]byte, msgLength)
 	_, _ = io.ReadFull(rand.Reader, msg)
 
 	c := New([]byte("qwerty"), compress)
+	if len(a) > 0 {
+		c.NPow = a[0]
+	}
 	enc, _ := c.Encrypt(msg)
 
 	r, _ := NewReader(nil, []byte("qwerty"), DECRYPT, false)
-
+	if len(a) > 0 {
+		r.C.NPow = a[0]
+	}
 	buf := bytes.NewReader(enc)
 	readbuf := make([]byte, 1024)
 
@@ -203,24 +216,73 @@ func benchmarkReader(b *testing.B, compress bool, msgLength int) {
 func BenchmarkEncryptUncompessed100b(b *testing.B) {
 	benchmarkEncrypt(b, false, 100)
 }
+
+func BenchmarkEncryptUncompessed100bDegraded(b *testing.B) {
+	benchmarkEncrypt(b, false, 100, 12)
+}
+
+func BenchmarkEncryptUncompessed100bVeryDegraded(b *testing.B) {
+	benchmarkEncrypt(b, false, 100, 10)
+}
+
 func BenchmarkEncryptUncompessed1K(b *testing.B) {
 	benchmarkEncrypt(b, false, 1024)
+}
+
+func BenchmarkEncryptUncompessed1KDegraded(b *testing.B) {
+	benchmarkEncrypt(b, false, 1024, 12)
+}
+
+func BenchmarkEncryptUncompessed1KVeryDegraded(b *testing.B) {
+	benchmarkEncrypt(b, false, 1024, 10)
 }
 
 func BenchmarkEncryptUncompessed1M(b *testing.B) {
 	benchmarkEncrypt(b, false, 1024*1024)
 }
 
+func BenchmarkEncryptUncompessed1MDegraded(b *testing.B) {
+	benchmarkEncrypt(b, false, 1024*1024, 12)
+}
+
+func BenchmarkEncryptUncompessed1MVeryDegraded(b *testing.B) {
+	benchmarkEncrypt(b, false, 1024*1024, 10)
+}
+
 func BenchmarkEncryptCompessed100b(b *testing.B) {
 	benchmarkEncrypt(b, true, 100)
+}
+
+func BenchmarkEncryptCompessed100bDegraded(b *testing.B) {
+	benchmarkEncrypt(b, true, 100, 12)
+}
+
+func BenchmarkEncryptCompessed100bVeryDegraded(b *testing.B) {
+	benchmarkEncrypt(b, true, 100, 10)
 }
 
 func BenchmarkEncryptCompessed1K(b *testing.B) {
 	benchmarkEncrypt(b, true, 1024)
 }
 
+func BenchmarkEncryptCompessed1KDegraded(b *testing.B) {
+	benchmarkEncrypt(b, true, 1024, 12)
+}
+
+func BenchmarkEncryptCompessed1KVeryDegraded(b *testing.B) {
+	benchmarkEncrypt(b, true, 1024, 10)
+}
+
 func BenchmarkEncryptCompessed1M(b *testing.B) {
 	benchmarkEncrypt(b, true, 1024*1024)
+}
+
+func BenchmarkEncryptCompessed1MDegraded(b *testing.B) {
+	benchmarkEncrypt(b, true, 1024*1024, 12)
+}
+
+func BenchmarkEncryptCompessed1MVeryDegraded(b *testing.B) {
+	benchmarkEncrypt(b, true, 1024*1024, 10)
 }
 
 func BenchmarkDecryptUncompessed100b(b *testing.B) {
@@ -275,12 +337,36 @@ func BenchmarkDecryptReaderUncompressed100b(b *testing.B) {
 	benchmarkReader(b, false, 100)
 }
 
+func BenchmarkDecryptReaderUncompressed100bDegraded(b *testing.B) {
+	benchmarkReader(b, false, 100, 12)
+}
+
+func BenchmarkDecryptReaderUncompressed100bVeryDegraded(b *testing.B) {
+	benchmarkReader(b, false, 100, 10)
+}
+
 func BenchmarkDecryptReaderUncompressed1K(b *testing.B) {
 	benchmarkReader(b, false, 1024)
 }
 
+func BenchmarkDecryptReaderUncompressed1KDegraded(b *testing.B) {
+	benchmarkReader(b, false, 1024, 12)
+}
+
+func BenchmarkDecryptReaderUncompressed1KVeryDegraded(b *testing.B) {
+	benchmarkReader(b, false, 1024, 10)
+}
+
 func BenchmarkDecryptReaderUncompressed1M(b *testing.B) {
 	benchmarkReader(b, false, 1024*1024)
+}
+
+func BenchmarkDecryptReaderUncompressed1MDegraded(b *testing.B) {
+	benchmarkReader(b, false, 1024*1024, 12)
+}
+
+func BenchmarkDecryptReaderUncompressed1MVeryDegraded(b *testing.B) {
+	benchmarkReader(b, false, 1024*1024, 10)
 }
 
 func BenchmarkDecryptReaderCompressed100b(b *testing.B) {

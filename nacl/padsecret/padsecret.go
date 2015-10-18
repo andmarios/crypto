@@ -255,7 +255,8 @@ func (e *Writer) Write(p []byte) (n int, err error) {
 // After a Flush, the writer has to be Reset in order to write to it again.
 func (e *Writer) Flush() error {
 	var err error
-	write := make([]byte, 0)
+	var write []byte
+
 	switch e.mode {
 	case ENCRYPT:
 		write, err = e.c.Encrypt(e.in)
